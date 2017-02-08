@@ -35,7 +35,6 @@ def key_type(element, keys):
         l=lower.search(element.attrib['k'])
         lc=lower_colon.search(element.attrib['k'])
         pc=problemchars.search(element.attrib['k'])
-        #print l
         if l:
             keys["lower"]+=1
             pass
@@ -48,8 +47,6 @@ def key_type(element, keys):
         else:
             keys["other"]+=1
             pass
-              
-                #print element.attrib['k']
     return keys
 
 
