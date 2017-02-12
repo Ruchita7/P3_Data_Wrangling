@@ -86,53 +86,83 @@ should be turned into
 "node_refs": ["305896090", "1719825889"]
 """
 
-
+#regular expression for lower case characters
 lower = re.compile(r'^([a-z]|_)*$')
+#regular expression for lower case characters containing colon
 lower_colon = re.compile(r'^([a-z]|_)*:([a-z]|_)*$')
+#regular expression for problem characters
 problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 
 CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 
 
 def shape_element(element):
-    node = {}
-    node_refs=[]
-    created={}
-    addr={}
-    if element.tag == "node" or element.tag == "way" :
-        node["type"]=element.tag         
-        for key in element.attrib.keys():          
-            if key in CREATED:          
-                created[key]=element.attrib[key]
+    node = {}   #dictionary for tag
+    node_refs = []  #list for node references
+    created = {}    #dictionary for created
+    addr = {}       #dictionary for address
+    otherKeys = {}  #dictionary for other tags
+    if element.tag == "node" or element.tag == "way":
+        node["type"] = element.tag
+        for key in element.attrib.keys():
+            #check if attribute is among created attributes
+            if key in CREATED:
+                created[key] = element.attrib[key]
+            #add latitude/longitude attributes to array "pos"
             elif (key in "lat" or key in "lon"):
-                    pos=[]
-                    pos.append(float(element.attrib["lat"])) 
-                    pos.append(float(element.attrib["lon"]))
-                    node["pos"]=pos
+                pos = []
+                pos.append(float(element.attrib["lat"]))
+                pos.append(float(element.attrib["lon"]))
+                node["pos"] = pos
             else:
-                    node[key]=element.attrib[key]
-            node["created"]=created
+                #add other attributes as it is
+                node[key] = element.attrib[key]
+            #created dictionary
+            node["created"] = created
+        #iterate child tag elements
         for child in element:
-            if child.tag=="nd":             
+            if child.tag == "nd":
                 node_refs.append(child.attrib["ref"])
-                
             elif is_valid(child):
                 if child.attrib['k'].startswith("addr:"):
-                    address=child.attrib['k'].split(":")
-                    if len(address)==2:
-                        address_tag=address[1]
-                        addr[address_tag]=child.attrib['v']
-                    
+                    address = child.attrib['k'].split(":")
+                    if len(address) == 2:
+                        address_tag = address[1]
+                        addr[address_tag] = child.attrib['v']
+
+
                 else:
-                    node[child.attrib['k']]=child.attrib['v']
-        if(len(node_refs)>0):
-            node["node_refs"]=node_refs
-        if(len(addr)>0):
-            node["address"]=addr
+                    # node[child.attrib['k']]=child.attrib['v']
+                    elementTag = child.attrib['k'].split(":")
+                    #if attribute does not contain ':' put it as key/value pair
+                    if len(elementTag) <= 1:
+                        node[child.attrib['k']] = child.attrib['v']
+                    #if attribute contains colon then process only second level tags
+                    elif len(elementTag) == 2:
+                        otherAttribute = elementTag[0]
+                        #if tag name already not added to 'node' dictionary then add it as dictionary
+                        if not node.has_key(otherAttribute):
+                            otherKeys = {}
+                        else:
+                            obj = node.get(otherAttribute)
+                            # determine object type if is string and already present, then set it as dictionary in 'otherKeys'
+                            if (type(obj) is str):
+                                otherKeys = {}
+                                otherKeys[otherAttribute] = obj
+                            del node[otherAttribute]
+                        #add the new key/value pair to 'otherKeys' dictionary and and add to node
+                        otherKeys[elementTag[1]] = child.attrib['v']
+                        node[otherAttribute] = otherKeys
+        #check if node_refs,addr have length then add to node dictionary
+        if (len(node_refs) > 0):
+            node["node_refs"] = node_refs
+        if (len(addr) > 0):
+            node["address"] = addr
         return node
     else:
-            return None
+        return None
 
+#check if key is valid or not
 def is_valid(element):
     l=lower.search(element.attrib['k'])
     lc=lower_colon.search(element.attrib['k'])
@@ -142,8 +172,6 @@ def is_valid(element):
     else:
         return True
     
-
-
 
 def process_map(file_in, pretty = False):
     # You do not need to change this file
@@ -165,7 +193,7 @@ def test():
     # call the process_map procedure with pretty=False. The pretty=True option adds 
     # additional spaces to the output, making it significantly larger.
     data = process_map('example.osm', True)
-    #pprint.pprint(data)
+    pprint.pprint(data)
     
     correct_first_elem = {
         "id": "261114295", 

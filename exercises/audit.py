@@ -1,7 +1,7 @@
 """
 Your task in this exercise has two steps:
 
-- audit the OSMFILE and change the variable 'mapping' to reflect the changes needed to fix 
+- audit the OSMFILE and change the variable 'mapping' to reflect the changes needed to fix
     the unexpected street types to the appropriate ones in the expected list.
     You have to add mappings only for the actual problems you find in this OSMFILE,
     not a generalized solution, since that may and will depend on the particular area you are auditing.
@@ -18,21 +18,22 @@ OSMFILE = "example.osm"
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 
 
-expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road", 
+expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road",
             "Trail", "Parkway", "Commons"]
 
-# UPDATE THIS VARIABLE
+# mapping for correct street name
 mapping = { "St": "Street",
             "St.": "Street",
             "Rd": "Road",
            "Rd.": "Road",
            "Ave": "Avenue",
-           "Ave.": "Avenue"                    
+           "Ave.": "Avenue"
             }
 
 
 def audit_street_type(street_types, street_name):
     m = street_type_re.search(street_name)
+    #find street names corresponding to regular expression, add to dictionary if not present
     if m:
         street_type = m.group()
         if street_type not in expected:
@@ -47,7 +48,7 @@ def audit(osmfile):
     osm_file = open(osmfile, "r")
     street_types = defaultdict(set)
     for event, elem in ET.iterparse(osm_file, events=("start",)):
-
+        #find way or node tags and iterate them for addr:street keys
         if elem.tag == "node" or elem.tag == "way":
             for tag in elem.iter("tag"):
                 if is_street_name(tag):
@@ -57,12 +58,14 @@ def audit(osmfile):
 
 
 def update_name(name, mapping):
-	m= street_type_re.search(name)
+    #find street names if matching street_type
+    m= street_type_re.search(name)
     if m:
         street_type = m.group()
+        #check if street_type is key in mapping, if so substitute mapping
         if street_type in mapping.keys():
             name = re.sub(street_type, mapping[street_type],name)
-	return name
+    return name
 
 def test():
     st_types = audit(OSMFILE)

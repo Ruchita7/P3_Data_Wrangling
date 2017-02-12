@@ -24,17 +24,25 @@ four tag categories in a dictionary:
 See the 'process_map' and 'test' functions for examples of the expected format.
 """
 
-
+#regular expression for lower case characters
 lower = re.compile(r'^([a-z]|_)*$')
+#regular expression for lower case characters containing colon
 lower_colon = re.compile(r'^([a-z]|_)*:([a-z]|_)*$')
+#regular expression for problem characters
 problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 
 
 def key_type(element, keys):
+    #find keys for <tag> elements to match regular expressions defined above
     if element.tag == "tag":
+        # for lower case  characters
         l=lower.search(element.attrib['k'])
+        # for lower case contain colon
         lc=lower_colon.search(element.attrib['k'])
+        # for problem characters
         pc=problemchars.search(element.attrib['k'])
+        #increment count for corresponding regular expression if match is found
+
         if l:
             keys["lower"]+=1
             pass
@@ -44,6 +52,7 @@ def key_type(element, keys):
         elif pc:
             keys["problemchars"]+=1
             pass
+        #if no match is found
         else:
             keys["other"]+=1
             pass
@@ -55,7 +64,6 @@ def process_map(filename):
     keys = {"lower": 0, "lower_colon": 0, "problemchars": 0, "other": 0}
     for _, element in ET.iterparse(filename):
         keys = key_type(element, keys)
-
     return keys
 
 
@@ -65,7 +73,7 @@ def test():
     # Note that the assertion below will be incorrect then.
     # Note as well that the test function here is only used in the Test Run;
     # when you submit, your code will be checked against a different dataset.
-    keys = process_map('example.osm')
+    keys = process_map('map.osm')
     pprint.pprint(keys)
     assert keys == {'lower': 5, 'lower_colon': 0, 'other': 1, 'problemchars': 1}
 

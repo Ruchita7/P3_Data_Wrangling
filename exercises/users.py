@@ -11,26 +11,29 @@ have contributed to the map in this particular area!
 The function process_map should return a set of unique user IDs ("uid")
 """
 
+#return uid of user
 def get_user(element):
-    return
+    return element.attrib.get('uid')
 
 
 def process_map(filename):
     users = set()
     for _, element in ET.iterparse(filename):
-         if element.attrib.get('uid') in users:
-                pass
-         else:
-                users.add(element.attrib.get('uid'))
-    value = None
-    while value in users:
-        users.remove(value)
+        #iterate tag key attributes to find "uid" attributes
+        for key in element.attrib.keys():
+            if key=="uid":
+            #if uid already in user set then skip
+                if get_user(element) in users:
+                    pass
+         #else add user uid to user set
+                else:
+                    users.add(get_user(element))
     return users
 
 
 def test():
 
-    users = process_map('example.osm')
+    users = process_map('map.osm')
     pprint.pprint(users)
     assert len(users) == 6
 

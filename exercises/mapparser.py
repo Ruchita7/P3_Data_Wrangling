@@ -17,15 +17,16 @@ from collections import defaultdict
 def count_tags(filename):
     tags=defaultdict(int)
     for event, element in ET.iterparse(filename):
+        #increment element tag count if already added to dictionary
         if element.tag in tags:
             tags[element.tag]+=1
+        #add element tag name to dictionary if not present already
         else:
             tags[element.tag]=1
     return tags
 
 def test():
-
-    tags = count_tags('example.osm')
+    tags = count_tags('map.osm')
     pprint.pprint(tags)
     assert tags == {'bounds': 1,
                      'member': 3,
