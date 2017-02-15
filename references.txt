@@ -1,0 +1,11 @@
+References
+
+http://www.gis.co.clay.mn.us/usps.htm
+http://www.centurylink.com/wholesale/systems/WebHelp/general_cemr_information/abbreviations.htm
+https://wiki.openstreetmap.org/wiki/OSM_XML
+https://discussions.udacity.com/c/nd002-p3-data-wrangling
+https://docs.python.org/2/library/xml.etree.elementtree.html
+https://docs.python.org/2/library/re.html
+https://www.timeout.com/newyork/things-to-do/50-reasons-why-nyc-is-the-greatest-city-in-the-world
+https://en.wikipedia.org/wiki/New_York
+http://www.zippostalcodes.com/postcodes/us/us-zip-codes-format/

@@ -18,6 +18,8 @@ CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 #regular expression for street type
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 
+postcode_re = re.compile(r"^[0-9]{5}$", re.IGNORECASE)
+
 #list for expected street types
 expected = ["Avenue","Boulevard","Common","Concourse","Circle","Crescent","Court","Center",
             "Drive","East","Heights","Interstate","Lane","Place","North","North West","Parkway",
@@ -56,6 +58,13 @@ mapping = {
 def is_ascii(str):
     return all(ord(chars) < 128 for chars in str)
 
+#match post code
+def match_postcode(zip):
+    m = postcode_re.match(zip)
+    if m:
+        return True
+    return False
+        
 #update street/city names if match found
 def update_name(name, mapping):
     #find street names if matching street_type
@@ -104,9 +113,13 @@ def shape_element(element):
                 #update mapping for street or city
                 if child.attrib['k']=="addr:street" or child.attrib['k']=="addr:city":
                         addr[elementTag[1]]=update_name(child.attrib['v'],mapping)
+                    
                 #process other address tags of level two
                 elif child.attrib['k'].startswith("addr:"):
                     if len(elementTag) == 2:
+                        if elementTag[1]=="postcode":
+                            if match_postcode(child.attrib['v'])==False:
+                                pass
                         address_tag = elementTag[1]
                         addr[address_tag] = child.attrib['v']
                 #process other tag attributes
