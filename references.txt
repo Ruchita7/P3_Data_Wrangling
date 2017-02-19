@@ -9,3 +9,9 @@ https://docs.python.org/2/library/re.html
 https://www.timeout.com/newyork/things-to-do/50-reasons-why-nyc-is-the-greatest-city-in-the-world
 https://en.wikipedia.org/wiki/New_York
 http://www.zippostalcodes.com/postcodes/us/us-zip-codes-format/
+https://docs.mongodb.com/manual/reference/
+http://wiki.openstreetmap.org/wiki/Map_Feature
+http://nymag.com/visitorsguide/shopping/destinations.htm
+https://www.mkyong.com/mongodb/mongodb-aggregate-and-group-example/
+http://stackoverflow.com/questions/196345/how-to-check-if-a-string-in-python-is-in-ascii
+https://docs.google.com/document/d/1F0Vs14oNEs2idFJR3C_OPxwS6L0HPliOii-QpbmrMo4/pub
