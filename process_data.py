@@ -1,5 +1,9 @@
+"""
+This code is for processing and clean the Open Street Map data set for New York City to be
+ converted to json for storing into Mongo Db database.
+"""
+
 import xml.etree.ElementTree as ET
-from collections import defaultdict
 import re
 import pprint
 import codecs
@@ -10,7 +14,7 @@ lower = re.compile(r'^([a-z]|_)*$')
 # regular expression for lower case characters containing colon
 lower_colon = re.compile(r'^([a-z]|_)*:([a-z]|_)*$')
 # regular expression for problem characters
-problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
+problem_chars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 
 # list for created values
 CREATED = ["version", "changeset", "timestamp", "user", "uid"]
@@ -18,7 +22,7 @@ CREATED = ["version", "changeset", "timestamp", "user", "uid"]
 # regular expression for street type
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 
-postcode_re = re.compile(r"^[0-9]{5}$", re.IGNORECASE)
+postcode_re = re.compile(r"^\d{5}$", re.IGNORECASE)
 
 # list for expected street types
 expected = ["Avenue", "Boulevard", "Common", "Concourse", "Circle", "Crescent", "Court", "Center",
@@ -56,58 +60,120 @@ mapping = {
 }
 
 
-def is_ascii(str):
-    return all(ord(chars) < 128 for chars in str)
+def is_ascii(values):
+    """
+    Function to check if ascii characters are present in string
+
+    Args:
+        values(str) : first parameter, the string to be checked
+
+    Returns:
+         bool: The return value. True for success, False otherwise.
+    """
+    return all(ord(chars) < 128 for chars in values)
 
 
-# match post code
-def match_postcode(zip):
-    m = postcode_re.match(zip)
+def update_postcode(zip_code):
+    """
+       Function to clean/retrieve correct postal code
+
+       Args:
+           zip_code(str) : first parameter, the zip code to be checked
+
+       Returns:
+            bool: The return value. True for success, False otherwise.
+       """
+    m = postcode_re.match(zip_code)
     if m:
-        return True
+        return zip_code
+    else:
+        clean_postcode = re.findall(r'^(\d{5})-\d{4}$', zip_code)
+        if clean_postcode:
+            return clean_postcode[0]
     return False
 
 
-# update street/city names if match found
-def update_name(name, mapping):
+def update_name(name, value_mapping):
+    """
+           Function to update street/city names if match found
+
+           Args:
+               name(str) : first parameter, the street/city name abbreviation to be updated
+               value_mapping(str) : second parameter, the full name of the street/city name abbreviation
+
+           Returns:
+                str: The return value, the updated street/city name
+           """
     # find street names if matching street_type
-    address_name = name.split();
+    address_name = name.split()
     for st in address_name:
         m = street_type_re.search(st)
         if m:
             street_type = m.group()
             # check if street_type is key in mapping, if so substitute mapping
-            if street_type in mapping.keys():
-                name = re.sub(street_type, mapping[street_type], name)
+            if street_type in value_mapping.keys():
+                name = re.sub(street_type, value_mapping[street_type], name)
     return name
 
-#return latitude/longitude
+
 def find_positions(element):
-    pos = []
-    pos.append(float(element.attrib["lat"]))
-    pos.append(float(element.attrib["lon"]))
+    """
+        This function returns an array of latitude and longitude corresponding to the lat/lon attributes of the element
+
+        Args:
+            element(element) : first parameter, the element iterated
+
+        Returns:
+                array: The return value, the lat/lon attributes of the element
+
+    """
+    lst = {float(element.attrib["lat"]), float(element.attrib["lon"])}
+    pos = list(lst)
     return pos
 
-#retrieve mapping for address field
-def retrieveAddress(child,elementTag):
-    if len(elementTag) == 2:
+
+def retrieve_address(child, element_tag):
+    """
+        This function cleans the address tag of the dataset
+
+        Args:
+            child: tag of element
+            element_tag: key of child element
+        Returns:
+            str: the corresponding/updated value
+
+    """
+    if len(element_tag) == 2:
         if child.attrib['k'] == "addr:street" or child.attrib['k'] == "addr:city":
             return update_name(child.attrib['v'], mapping)
-        elif elementTag[1] == "postcode":
-            if match_postcode(child.attrib['v']) is False:
-                pass
+        elif element_tag[1] == "postcode":
+            postcode=update_postcode(child.attrib['v'])
+            if postcode is False:
+                return ""
             else:
-                return child.attrib['v']
+                return postcode
         # process other address tags of level two
         else:
                 return child.attrib['v']
 
+
 def shape_element(element):
+    """
+        This function processes and cleans the values of the data set
+
+        Args:
+            element(element) : first parameter, the element iterated
+
+        Returns:
+            node(dict) : dictionary of the key/value pair of the cleaned dataset
+
+    """
+
     node = {}  # dictionary for tag
     node_refs = []  # list for node references
     created = {}  # dictionary for created
-    addr = {}  # dictionary for address
-    otherKeys = {}  # dictionary for other tags
+    address_dict = {}  # dictionary for address
+    other_keys = {}  # dictionary for other tags
     if element.tag == "node" or element.tag == "way":
         node["type"] = element.tag
         for key in element.attrib.keys():
@@ -131,55 +197,75 @@ def shape_element(element):
             # determine if attribute key/value is valid
             elif is_valid(child):
                 # handle street values and update if needed
-                elementTag = child.attrib['k'].split(":")
+                element_tag = child.attrib['k'].split(":")
                 if child.attrib['k'].startswith("addr:"):
-                    addr[elementTag[1]] = retrieveAddress(child,elementTag)
+                    updated_value=retrieve_address(child, element_tag)
+                    if updated_value:
+                        address_dict[element_tag[1]] = updated_value
                 # process other tag attributes
                 else:
                     # if attribute does not contain ':' put it as key/value pair
-                    if len(elementTag) <= 1:
+                    if len(element_tag) <= 1:
                         node[child.attrib['k']] = child.attrib['v']
                     # if attribute contains colon then process only second level tags
-                    elif len(elementTag) == 2:
-                        otherAttribute = elementTag[0]
+                    elif len(element_tag) == 2:
+                        other_attribute = element_tag[0]
                         # if tag name already not added to 'node' dictionary then add it as dictionary
-                        if not node.has_key(otherAttribute):
-                            otherKeys = {}
+                        if not node.has_key(other_attribute):
+                            other_keys = {}
                         else:
-                            obj = node.get(otherAttribute)
-                            # determine object type if is string and already present, then set it as dictionary in 'otherKeys'
+                            obj = node.get(other_attribute)
+                            # determine object type if is string and already present, then set it as dictionary in 'other_keys'
                             if type(obj) is str:
-                                otherKeys = {}
-                                otherKeys[otherAttribute] = obj
-                            del node[otherAttribute]
-                        # add the new key/value pair to 'otherKeys' dictionary and and add to node
-                        otherKeys[elementTag[1]] = child.attrib['v']
-                        node[otherAttribute] = otherKeys
-        # check if node_refs,addr have length then add to node dictionary
+                                other_keys = {}
+                                other_keys[other_attribute] = obj
+                            del node[other_attribute]
+                        # add the new key/value pair to 'other_keys' dictionary and and add to node
+                            other_keys[element_tag[1]] = child.attrib['v']
+                        node[other_attribute] = other_keys
+        # check if node_refs,address_dict have length then add to node dictionary
         if len(node_refs) > 0:
             node["node_refs"] = node_refs
-        if len(addr) > 0:
-            node["address"] = addr
+        if len(address_dict) > 0:
+            node["address"] = address_dict
         return node
     else:
         return None
 
 
-# check if key is valid or not
 def is_valid(element):
+    """
+        This function checks if keys of the tag are valid or not
+
+        Args:
+            element(element) : The first parameter, the element iterated
+
+        Returns:
+            bool: The return value. True for success, False otherwise.
+
+    """
     l = lower.search(element.attrib['k'])
     lc = lower_colon.search(element.attrib['k'])
-    pc = problemchars.search(element.attrib['k'])
+    pc = problem_chars.search(element.attrib['k'])
     # if problem characters found return false
-    if pc or is_ascii(element.attrib['v']) == False:
+    if pc or not is_ascii(element.attrib['v']):
         return False
     else:
         return True
 
 
-# process osm file
 def process_data(file_in, pretty=False):
-    # You do not need to change this file
+    """
+        This function processes the osm input file to be converted to json
+
+        Args:
+            file_in(str) : the first argument, the name of file to be processed
+            pretty(boolean) : the second argument, with value = False to indent the resulting json
+
+        Returns :
+            data(array) : the resulting json
+
+    """
     file_out = "{0}.json".format(file_in)
     data = []
     with codecs.open(file_out, "w") as fo:
