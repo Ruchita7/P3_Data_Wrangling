@@ -1,7 +1,7 @@
-#P3- Data Wrangling with Mongo DB
-##(Open Street Map)
+# P3- Data Wrangling with Mongo DB
+## (Open Street Map)
 
-####Map Area: New York City, United States of America
+#### Map Area: New York City, United States of America
 http://www.openstreetmap.org/relation/175905#map=10/40.6978/-73.9792
 
  
@@ -9,3 +9,5 @@ I chose **New York City** as my data extract for P3-Data Wrangling with Mongo DB
 
 So for these reasons I chose New York City as my data set. 
 I downloaded the data via a custom extract from Mapzen (https://mapzen.com/data/metro-extracts/your-extracts/079ffc8778d7)
+
+I used data munging techniques in this project to assess the quality of the data for validity, accuracy, completeness, consistency and uniformity. After thoroughly auditing and cleaning my dataset for NYC, I converted it from XML to JSON format and imported the cleaned .json file into a MongoDB database.
