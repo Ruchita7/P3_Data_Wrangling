@@ -1,5 +1,5 @@
 # P3- Data Wrangling with Mongo DB
-## (Open Street Map)
+**(Open Street Map)**
 
 #### Map Area: New York City, United States of America
 http://www.openstreetmap.org/relation/175905#map=10/40.6978/-73.9792
